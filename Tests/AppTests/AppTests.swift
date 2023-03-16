@@ -13,13 +13,13 @@ final class AppTests: XCTestCase {
         //   docker run -d -p 27017:27017 --name test-mongo mongo:latest
         // try app.mongoDB.configure("mongodb://localhost:27017")
 
-        try app.test(.POST, "", beforeRequest: { req in
+        try app.test(.POST, "kittens", beforeRequest: { req in
             try req.content.encode(["name":"test Kitten", "color": "black"])
         }, afterResponse: { res in
             XCTAssertEqual(res.status, .created)
         })
 
-        try app.test(.GET, "", afterResponse: { res in
+        try app.test(.GET, "kittens", afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
             // test that the extended JSON we get can be decoded into `Kitten`s.
             XCTAssertNoThrow(try res.content.decode([Kitten].self))
