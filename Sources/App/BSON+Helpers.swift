@@ -8,13 +8,16 @@
 import Foundation
 import MongoDBVapor
 
-extension BSON {
-    static func from(_ value: Any) throws -> BSON {
+
+public extension BSON {
+    public static func from(_ value: Any) throws -> BSON {
         switch value {
         case let dict as [String: Any?]:
             return .document(try dict.toBSONDocument())
         case let document as BSONDocument:
             return .document(document)
+        case let int as Int:
+            return .int32(Int32(int))
         case let int32 as Int32:
             return .int32(int32)
         case let int64 as Int64:
@@ -22,8 +25,7 @@ extension BSON {
         case let decimal128 as BSONDecimal128:
             return .decimal128(decimal128)
         case let array as [Any]:
-            let bsonArray = try array.map { try BSON.from($0) }
-            return .array(bsonArray)
+            return try array.toBSON()
         case let bool as Bool:
             return .bool(bool)
         case let date as Date:
