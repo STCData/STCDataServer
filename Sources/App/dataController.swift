@@ -1,33 +1,20 @@
-import MongoKitten
+import MongoDBVapor
 import Vapor
 import SwiftAvroCore
+//import BSON
 
 extension Request {
     var collectionName: String {
         self.parameters.get("collection")!
     }
     
-    var collection: MongoCollection {
-        return self.application.db[self.collectionName]
+    var collection: MongoCollection<BSONDocument> {
+        self.application.mongoDB.client.db("data").collection(collectionName, withType: BSONDocument.self)
     }
+
+    
 }
 
-
-private extension Dictionary {
-    func castToEncodable() -> Dictionary<String, Encodable> {
-        var result = [String: Encodable]()
-        
-        for (key, value) in self {
-            if let nestedDict = value as? [String: Any] {
-                result[key as! String] = nestedDict.castToEncodable() as? any Encodable
-            } else if let castValue = value as? Encodable {
-                result[key as! String] = castValue
-            }
-        }
-        
-        return result
-    }
-}
 
 
 struct DataController: RouteCollection {
@@ -65,13 +52,13 @@ struct DataController: RouteCollection {
         let blockData = data.subdata(in: start..<data.count)
         try oc.decodeBlock(from: blockData)
 
-        let decodedObjects: [[String: Any]] = try oc.decodeObjects() as! [[String: Any]]
+        let decodedObjects: [[String: Any?]] = try oc.decodeObjects() as! [[String: Any?]]
         
         for obj in decodedObjects {
-            let castedObj = obj.castToEncodable()
-            let primitiveObj = castedObj as! [String: any Primitive]
-            let document: Document = Document(elements:Array(primitiveObj))
-            try await req.collection.insert(document)
+            let doc = try obj.toBSONDocument()
+            let json = doc.toExtendedJSONString()
+            print("\(json)")
+            try await req.collection.insertOne(doc)
         }
 
         return Response(status: .created)

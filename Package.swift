@@ -2,23 +2,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "STCDataServer",
+    name: "VaporExample",
     platforms: [
         .macOS(.v12)
     ],
     dependencies: [
-                .package(url: "https://github.com/vapor/vapor", .upToNextMajor(from: "4.50.0")),
-        .package(url: "https://github.com/orlandos-nl/MongoKitten.git", from: "7.3.0"),
+        .package(url: "https://github.com/vapor/vapor", .upToNextMajor(from: "4.50.0")),
+        .package(url: "https://github.com/mongodb/mongodb-vapor", .upToNextMajor(from: "1.1.0")),
         .package(url: "https://github.com/STCData/SwiftAvroCore.git", branch:"master"),
+
     ],
     targets: [
         .target(
             name: "App",
             dependencies: [
+                "SwiftAvroCore",
                 .product(name: "Vapor", package: "vapor"),
-                            "SwiftAvroCore",
-                                                        "MongoKitten",
-
+                .product(name: "MongoDBVapor", package: "mongodb-vapor")
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of the
@@ -29,6 +29,7 @@ let package = Package(
         ),
         .executableTarget(name: "Run", dependencies: [
             .target(name: "App"),
+            .product(name: "MongoDBVapor", package: "mongodb-vapor")
         ]),
         .testTarget(name: "AppTests", dependencies: [
             .target(name: "App"),

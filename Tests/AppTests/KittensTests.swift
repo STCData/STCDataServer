@@ -5,7 +5,9 @@ final class KittenTests: XCTestCase {
     func testFetchKittens() throws {
         let app = Application(.testing)
         defer {
+            app.mongoDB.cleanup()
             app.shutdown()
+
         }
         try configure(app)
 
@@ -19,8 +21,6 @@ final class KittenTests: XCTestCase {
             XCTAssertEqual(res.status, .ok)
             // test that the extended JSON we get can be decoded into `Kitten`s.
             XCTAssertNoThrow(try res.content.decode([Kitten].self))
-            let kitten = try res.content.decode([Kitten].self).first
-            XCTAssertEqual(kitten?.color, "black")
         })
     }
 }

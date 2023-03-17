@@ -107,6 +107,7 @@ final class KittenActionsTests: XCTestCase {
     func testKittenActions() throws {
         let app = Application(.testing)
         defer {
+            app.mongoDB.cleanup()
             app.shutdown()
         }
         try configure(app)

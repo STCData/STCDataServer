@@ -1,7 +1,7 @@
-import MongoKitten
+import MongoDBVapor
 import Vapor
+//import BSON
 
-/// A type matching the structure of documents in the corresponding MongoDB collection.
 struct Kitten: Content, Codable {
     // let _id: BSONObjectID?
     let name: String
@@ -11,9 +11,8 @@ struct Kitten: Content, Codable {
 
 
 extension Request {
-    /// Convenience accessor for the home.kittens collection.
-    var kittens: MongoCollection {
-        self.application.db["kittens"]
+    var kittenCollection: MongoCollection<Kitten> {
+        self.application.mongoDB.client.db("home").collection("kittens", withType: Kitten.self)
     }
 }
 
@@ -31,15 +30,12 @@ struct KittensController: RouteCollection {
     }
 
     func index(req: Request) async throws -> [Kitten] {
-        try await req.kittens.find().decode(Kitten.self).drain()
+        try await req.kittenCollection.find().toArray()
     }
 
     func create(req: Request) async throws -> Response {
-        var newKitten = try req.content.decode(Kitten.self)
-        newKitten.createdAt = Date()
-        let encoder = BSONEncoder()
-        let encodedKitten: Document = try encoder.encode(newKitten)
-        try await req.kittens.insert(encodedKitten)
+        let newKitten = try req.content.decode(Kitten.self)
+        try await req.kittenCollection.insertOne(newKitten)
         return Response(status: .created)
     }
 /*
