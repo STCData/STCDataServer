@@ -13,6 +13,23 @@ extension Request {
 }
 
 
+private extension Dictionary {
+    func castToEncodable() -> Dictionary<String, Encodable> {
+        var result = [String: Encodable]()
+        
+        for (key, value) in self {
+            if let nestedDict = value as? [String: Any] {
+                result[key as! String] = nestedDict.castToEncodable() as? any Encodable
+            } else if let castValue = value as? Encodable {
+                result[key as! String] = castValue
+            }
+        }
+        
+        return result
+    }
+}
+
+
 struct DataController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let data = routes.grouped("data")
@@ -39,30 +56,25 @@ struct DataController: RouteCollection {
     }
     
     func create(req: Request) async throws -> Response {
-        
-        let codec = Codec()
-        let avro = Avro()
-        var oc = try! avro.makeFileObjectContainer(schema: """
-    {
-    "type": "record",
-    "name": "\(req.collectionName)",
-    "fields" : []
-    }
-    """, codec: codec)
-        
-        let contentType = req.headers["Content-Type"]
-//        guard contentType.contains("image/png") else { return }
+        var oc = try AvroDecoder.makeObjectContrainer()
         let buffer = req.body.data!
         let data = buffer.getData(at: buffer.readerIndex, length: buffer.readableBytes)!
         
         try oc.decodeHeader(from: data)
-
-        // decode objec
         let start = oc.findMarker(from: data)
-        try oc.decodeBlock(from: data.subdata(in: start..<data.count))
+        let blockData = data.subdata(in: start..<data.count)
+        try oc.decodeBlock(from: blockData)
 
-        let blockData = oc.blocks[0].data
+        let decodedObjects: [[String: Any]] = try oc.decodeObjects() as! [[String: Any]]
+        
+        for obj in decodedObjects {
+            let castedObj = obj.castToEncodable()
+            let primitiveObj = castedObj as! [String: any Primitive]
+            let document: Document = Document(elements:Array(primitiveObj))
+            print("\(document)")
+        }
 
+        
 //        var newKitten = try req.content.decode(Kitten.self)
 //        newKitten.createdAt = Date()
 //        let encoder = BSONEncoder()

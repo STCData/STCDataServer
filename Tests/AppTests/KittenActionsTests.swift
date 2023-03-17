@@ -1,7 +1,7 @@
 @testable import App
 import XCTVapor
 import SwiftAvroCore
-
+import Foundation
 
 
 struct Kitty: Codable, Equatable {
@@ -38,9 +38,9 @@ struct KittyAction: Codable, Equatable {
     }
     let label: String
     let type: KittyActionType
-    let timestamp: Date
+    let timestamp: TimeInterval
+    let currentDate: Date
     let intValue: Int
-    let floatValue: Float
     let doubleValue: Double
     let kitty: Kitty
     
@@ -51,28 +51,25 @@ struct KittyAction: Codable, Equatable {
             "very very very very very very long label",
             "hahahhhahah"
         ].randomElement()!, type: KittyActionType.allCases.randomElement()!,
-             timestamp: Date(),
+             timestamp: Date().timeIntervalSince1970,
+             currentDate: Date(),
              intValue: Int.random(in: -100...4990),
-             floatValue: Float.random(in: -1000...40),
              doubleValue: Double.random(in: -100...40),
              kitty: Kitty.random())
     }
 }
 
 final class KittenActionsTests: XCTestCase {
-    func testKittenActions() throws {
-        let app = Application(.testing)
-        defer {
-            app.shutdown()
-        }
-        try configure(app)
+    func makeSimpleActionsData() throws -> Data {
         
-        let actions = (1...10).map { _ in
-            KittyAction.random()
+        struct SimpleAction: Codable {
+            var a: UInt64 = 1
+            var b: String = "hello"
         }
         
-
-        
+        let actions = (1...10).map { i in
+            SimpleAction(a: i, b: "hello #\(i)")
+        }
         
         let codec = Codec()
         let avro = Avro()
@@ -83,9 +80,38 @@ final class KittenActionsTests: XCTestCase {
         
         try oc.addObjects(actions)
         
-        let data = try oc.encodeObject()
-
+        return try oc.encodeObject()
+    }
+    
+    
+    func makeKittyActionsData() throws -> Data {
         
+        let actions = (1...10).map { _ in
+            KittyAction.random()
+        }
+        
+        let codec = Codec()
+        let avro = Avro()
+        
+        let schema = AvroSchema.reflecting(actions.first!)!
+        let schemaString = try! String(decoding: avro.encodeSchema(schema: schema), as: UTF8.self)
+        var oc = try! avro.makeFileObjectContainer(schema: schemaString, codec: codec)
+        
+        try oc.addObjects(actions)
+        
+        return try oc.encodeObject()
+    }
+
+    
+    
+    func testKittenActions() throws {
+        let app = Application(.testing)
+        defer {
+            app.shutdown()
+        }
+        try configure(app)
+        
+        let data = try makeKittyActionsData()
         
         
         try app.test(.POST, "data/kittenActions/", beforeRequest: { req in

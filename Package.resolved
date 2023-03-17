@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/orlandos-nl/MongoKitten.git",
         "state": {
           "branch": null,
-          "revision": "1d1365cfe3832d43cbc5492e2ea3b6600c707cbf",
-          "version": "7.3.0"
+          "revision": "dc7e06f992b8c79fdfa99314f8372a49e8cbc451",
+          "version": "7.5.1"
         }
       },
       {
@@ -204,7 +204,7 @@
         "repositoryURL": "https://github.com/STCData/SwiftAvroCore.git",
         "state": {
           "branch": "master",
-          "revision": "5ac49634134dd3e696f73539bbe706f957318703",
+          "revision": "5518c4de9766a06030cb8667e7019c2a9850f016",
           "version": null
         }
       },
