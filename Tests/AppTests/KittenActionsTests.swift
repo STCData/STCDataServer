@@ -39,7 +39,7 @@ struct KittyAction: Codable, Equatable {
     let label: String
     let type: KittyActionType
     let timestamp: TimeInterval
-    let currentDate: Date
+    let createdAt: Date
     let intValue: Int
     let doubleValue: Double
     let kitty: Kitty
@@ -52,7 +52,7 @@ struct KittyAction: Codable, Equatable {
             "hahahhhahah"
         ].randomElement()!, type: KittyActionType.allCases.randomElement()!,
              timestamp: Date().timeIntervalSince1970,
-             currentDate: Date(),
+             createdAt: Date(),
              intValue: Int.random(in: -100...4990),
              doubleValue: Double.random(in: -100...40),
              kitty: Kitty.random())

@@ -71,15 +71,9 @@ struct DataController: RouteCollection {
             let castedObj = obj.castToEncodable()
             let primitiveObj = castedObj as! [String: any Primitive]
             let document: Document = Document(elements:Array(primitiveObj))
-            print("\(document)")
+            try await req.collection.insert(document)
         }
 
-        
-//        var newKitten = try req.content.decode(Kitten.self)
-//        newKitten.createdAt = Date()
-//        let encoder = BSONEncoder()
-//        let encodedKitten: Document = try encoder.encode(newKitten)
-//        try await req.collection.insert(encodedKitten)
         return Response(status: .created)
     }
 
