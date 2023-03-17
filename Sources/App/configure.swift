@@ -14,6 +14,8 @@ public func configure(_ app: Application) throws {
     // See: https://docs.mongodb.com/manual/reference/mongodb-extended-json
     // ContentConfiguration.global.use(encoder: ExtendedJSONEncoder(), for: .json)
     // ContentConfiguration.global.use(decoder: ExtendedJSONDecoder(), for: .json)
+    
+    ContentConfiguration.global.use(decoder: AvroDecoder(), for: .avro)
 
     // Register routes.
     try routes(app)

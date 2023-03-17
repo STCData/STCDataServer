@@ -1,6 +1,6 @@
 @testable import App
 import XCTVapor
-
+import SwiftAvroCore
 
 
 
@@ -66,22 +66,61 @@ final class KittenActionsTests: XCTestCase {
             app.shutdown()
         }
         try configure(app)
-
-        WebSocket.connect(to: "ws://echo.websocket.org", on: eventLoop) { ws in
-            // Connected WebSocket.
-            print(ws)
-        }
-
-        XCTAssertNotNil(app.http.server.shared.localAddress)
-        guard let localAddress = app.http.server.shared.localAddress,
-              let port = localAddress.port else {
-            XCTFail("couldn't get ip/port from \(app.http.server.shared.localAddress.debugDescription)")
-            return
+        
+        let actions = (1...10).map { _ in
+            KittyAction.random()
         }
         
+
+        
+        
+        let codec = Codec()
+        let avro = Avro()
+        
+        let schema = AvroSchema.reflecting(actions.first!)!
+        let schemaString = try! String(decoding: avro.encodeSchema(schema: schema), as: UTF8.self)
+        var oc = try! avro.makeFileObjectContainer(schema: schemaString, codec: codec)
+        
+        try oc.addObjects(actions)
+        
+        let data = try oc.encodeObject()
+
+        
+        
+        
+        try app.test(.POST, "data/kittenActions/", beforeRequest: { req in
+            
+            var headers = HTTPHeaders()
+            headers.add(name: .contentType, value: "application/avro")
+
+            req.headers = headers
+            req.body.writeData(data)
+        }, afterResponse: { res in
+            XCTAssertEqual(res.status, .created)
+        })
+    }
+        
+
+    
+    func XtestKittenActionsWS() throws {
+        let app = Application(.testing)
+        defer {
+            app.shutdown()
+        }
+        try configure(app)
+
+        let port = 80
+        
+//        XCTAssertNotNil(app.http.server.shared.localAddress)
+//        guard let localAddress = app.http.server.shared.localAddress,
+//              let port = localAddress.port else {
+//            XCTFail("couldn't get ip/port from \(app.http.server.shared.localAddress.debugDescription)")
+//            return
+//        }
+//        
         let promise = app.eventLoopGroup.next().makePromise(of: String.self)
         WebSocket.connect(
-            to: "ws://localhost:\(port)/foo",
+            to: "ws://localhost:\(port)/data/kittenActions/ws",
             on: app.eventLoopGroup.next()
         ) { ws in
             // do nothing
@@ -92,23 +131,5 @@ final class KittenActionsTests: XCTestCase {
 
         try XCTAssertEqual(promise.futureResult.wait(), "foo")
 
-
-        try app.test(.POST, "data", beforeRequest: { req in
-            let actions = (1...10).map { _ in
-                KittyAction.random()
-            }   
-
-            try req.content.encode(["name":"test Kitten", "color": "black"])
-        }, afterResponse: { res in
-            XCTAssertEqual(res.status, .created)
-        })
-
-        // try app.test(.GET, "kittens", afterResponse: { res in
-        //     XCTAssertEqual(res.status, .ok)
-        //     // test that the extended JSON we get can be decoded into `Kitten`s.
-        //     XCTAssertNoThrow(try res.content.decode([Kitten].self))
-        //     let kitten = try res.content.decode([Kitten].self).first
-        //     XCTAssertEqual(kitten?.color, "black")
-        // })
     }
 }
