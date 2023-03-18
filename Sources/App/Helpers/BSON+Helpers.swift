@@ -10,7 +10,7 @@ import MongoDBVapor
 
 
 public extension BSON {
-    public static func from(_ value: Any) throws -> BSON {
+    static func from(_ value: Any) throws -> BSON {
         switch value {
         case let dict as [String: Any?]:
             return .document(try dict.toBSONDocument())
