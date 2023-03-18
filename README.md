@@ -1,5 +1,6 @@
 # intro
 
+this server takes schemaless timeseries data from clients and preserves it in mongodb
 
 # running
 
