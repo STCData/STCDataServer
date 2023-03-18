@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by standard on 3/18/23.
 //
@@ -8,12 +8,11 @@
 import Foundation
 import MongoDBVapor
 
-
 public extension BSON {
     static func from(_ value: Any) throws -> BSON {
         switch value {
         case let dict as [String: Any?]:
-            return .document(try dict.toBSONDocument())
+            return try .document(dict.toBSONDocument())
         case let document as BSONDocument:
             return .document(document)
         case let int as Int:
@@ -75,7 +74,7 @@ extension Dictionary where Key == String, Value == Any? {
 
 extension Array where Element: Any {
     func toBSON() throws -> BSON {
-        let bsonArray = try self.map { try BSON.from($0) }
+        let bsonArray = try map { try BSON.from($0) }
         return .array(bsonArray)
     }
 }
