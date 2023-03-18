@@ -39,8 +39,13 @@ extension Request {
         self.parameters.get("collection")!
     }
     
+    var dbName: String {
+        self.parameters.get("db")!
+    }
+
+    
     func makeCollection() async throws -> MongoCollection<BSONDocument> {
-        let db = self.application.mongoDB.client.db("data")
+        let db = self.application.mongoDB.client.db(dbName)
 
         let to = TimeseriesOptions.from(
             timeField:DocFields.timeField.rawValue,
@@ -66,13 +71,12 @@ extension Request {
 struct DataController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let data = routes.grouped("data")
-        data.webSocket("ws", onUpgrade: webSocket)
-
-        data.group(":collection") { dataCollection in
-            dataCollection.webSocket("ws", onUpgrade: webSocket)
-            dataCollection.post("", use: create)
+        data.group(":db") { dataDb in
+            dataDb.group(":collection") { dataCollection in
+                dataCollection.webSocket("ws", onUpgrade: webSocket)
+                dataCollection.post("", use: create)
+            }
         }
-        
     }
     
     func webSocket(req: Request, ws: WebSocket) async -> () {

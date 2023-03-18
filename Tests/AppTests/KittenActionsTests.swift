@@ -60,6 +60,12 @@ struct KittyAction: Codable, Equatable {
 }
 
 final class KittenActionsTests: XCTestCase {
+    func makeAvroHeaders() -> HTTPHeaders{
+        var headers = HTTPHeaders()
+        headers.add(name: .contentType, value: "application/avro")
+        return headers
+    }
+    
     func makeSimpleActionsData() throws -> Data {
         
         struct SimpleAction: Codable {
@@ -105,23 +111,32 @@ final class KittenActionsTests: XCTestCase {
     
     
     func testKittenActions() throws {
+        
+        let dbName = "kittens"
+        let colName = "kittenActions"
+        let apiPath = "data/\(dbName)/\(colName)/"
+        
         let app = Application(.testing)
         defer {
             app.mongoDB.cleanup()
             app.shutdown()
         }
         try configure(app)
-        
-        let data = try makeKittyActionsData()
-        
-        
-        try app.test(.POST, "data/kittenActions/", beforeRequest: { req in
-            
-            var headers = HTTPHeaders()
-            headers.add(name: .contentType, value: "application/avro")
+        let _ = app.mongoDB.client.db(dbName).drop()
 
-            req.headers = headers
+        let data = try makeKittyActionsData()
+        try app.test(.POST, apiPath, beforeRequest: { req in
+            req.headers = makeAvroHeaders()
             req.body.writeData(data)
+        }, afterResponse: { res in
+            XCTAssertEqual(res.status, .created)
+        })
+        
+        
+        let data2 = try makeKittyActionsData()
+        try app.test(.POST, apiPath, beforeRequest: { req in
+            req.headers = makeAvroHeaders()
+            req.body.writeData(data2)
         }, afterResponse: { res in
             XCTAssertEqual(res.status, .created)
         })
